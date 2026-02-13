@@ -1,0 +1,19 @@
+arg("").resources
+| where type == "microsoft.hybridcompute/machines/extensions"
+| where name contains "LinuxAgent" or name contains "MonitorWindowsAgent"
+| extend parsedProperties = parse_json(properties)
+| extend provisioningState = tostring(parsedProperties.provisioningState)
+| extend type = tostring(parsedProperties.type)
+| extend version = tostring(parsedProperties.typeHandlerVersion)
+| extend message = tostring(parsedProperties.instanceView.status.message)
+| where provisioningState <> "Succeeded"
+| extend parsedProperties = parse_json(properties)
+| extend SubscriptionID = extract(@"\/subscriptions\/([0-9a-fA-F-]+)", 1, id),
+         ResourceGroup = extract(@"\/resourceGroups\/([^\/]+)", 1, id),
+         MachineName = extract(@"machines\/([^\/]+)", 1, id),
+         ExtensionName = extract(@"extensions\/([^\/]+)", 1, id),
+         ProvisioningState = tostring(parsedProperties.provisioningState),
+         Status = tostring(parsedProperties.status),
+         ExtensionVersion = tostring(parsedProperties.typeHandlerVersion),
+         Publisher = tostring(parsedProperties.publisher)
+| project name, provisioningState, MachineName, message

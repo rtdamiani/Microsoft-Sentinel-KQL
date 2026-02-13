@@ -1,0 +1,4 @@
+Operation
+| where TimeGenerated > ago(12h)
+| where Detail has 'OverQuota'
+| project TimeGenerated=datetime_utc_to_local(TimeGenerated,"Brazil/East"), OperationStatus, Detail

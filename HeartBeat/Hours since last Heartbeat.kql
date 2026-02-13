@@ -1,0 +1,10 @@
+Heartbeat
+| where TimeGenerated > ago(15d)
+| summarize arg_max(TimeGenerated, *) by Computer
+| project
+    Computer, ComputerPrivateIPs, OSType, Category,
+    ['Last Heartbeat']=TimeGenerated,
+    ['Hours since last Heartbeat']=datetime_diff("Hour", now(), TimeGenerated)
+    //['Days Since Last Heartbeat']=datetime_diff("day", now(), TimeGenerated)
+| where ['Hours since last Heartbeat'] > 6
+| sort by ['Hours since last Heartbeat'] desc 

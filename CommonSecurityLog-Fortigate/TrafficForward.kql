@@ -1,0 +1,23 @@
+CommonSecurityLog
+| where DeviceEventCategory == "traffic:forward"
+| extend FTNTFGTeventtime = extract("FTNTFGTeventtime=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTtz = extract("FTNTFGTtz=([\\-\\+\\d]+);", 1, AdditionalExtensions)
+| extend FTNTFGTlogid = extract("FTNTFGTlogid=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTsubtype = extract("FTNTFGTsubtype=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTlevel = extract("FTNTFGTlevel=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTvd = extract("FTNTFGTvd=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTsrcintfrole = extract("FTNTFGTsrcintfrole=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTdstintfrole = extract("FTNTFGTdstintfrole=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTsrcinetsvc = extract("FTNTFGTsrcinetsvc=([\\w\\-\\.]+);", 1, AdditionalExtensions)
+| extend FTNTFGTsrccountry = extract("FTNTFGTsrccountry=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTdstcountry = extract("FTNTFGTdstcountry=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTpolicyid = extract("FTNTFGTpolicyid=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTpolicytype = extract("FTNTFGTpolicytype=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTpoluuid = extract("FTNTFGTpoluuid=([\\w\\-]+);", 1, AdditionalExtensions)
+| extend FTNTFGTpolicyname = extract("FTNTFGTpolicyname=([\\w\\-]+);", 1, AdditionalExtensions) // Novo campo adicionado
+| extend FTNTFGTappcat = extract("FTNTFGTappcat=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTcrscore = extract("FTNTFGTcrscore=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTcraction = extract("FTNTFGTcraction=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTcrlevel = extract("FTNTFGTcrlevel=([\\w]+);", 1, AdditionalExtensions)
+| where SourceIP in ("83.97.73.245", "117.132.188.206")
+| project TimeGenerated, DeviceAction, FTNTFGTlevel, FTNTFGTsrcinetsvc, MaliciousIPCountry, SourceIP, DestinationIP, FTNTFGTdstcountry, FTNTFGTpolicyid, FTNTFGTpoluuid, FTNTFGTpolicyname, FTNTFGTappcat, FTNTFGTcrscore,IndicatorThreatType

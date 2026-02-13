@@ -1,0 +1,24 @@
+let starttime = 17d;
+let endtime = 10d;
+let timeframe = 301h;
+let HistThreshold = 25; 
+let CurrThreshold = 70; 
+let HistoricalThreats = CommonSecurityLog
+| where isnotempty(SourceIP)
+| where TimeGenerated between (startofday(ago(starttime))..startofday(ago(endtime)))
+| where DeviceVendor =~ "Palo Alto Networks"
+| where Activity =~ "THREAT" and SimplifiedDeviceAction =~ "alert" 
+| where DeviceEventClassID in ('spyware', 'scan', 'file', 'vulnerability', 'flood', 'packet', 'virus','wildfire', 'wildfire-virus')
+| summarize TotalEvents = count(), ThreatTypes = make_set(DeviceEventClassID), DestinationIpList = make_set(DestinationIP), FirstSeen = min(TimeGenerated) , LastSeen = max(TimeGenerated) by SourceIP, DeviceAction, DeviceVendor;
+let CurrentHourThreats =  CommonSecurityLog
+| where isnotempty(SourceIP)
+| where TimeGenerated > ago(timeframe)
+| where DeviceProduct =~ "PAN-OS"
+| where Activity =~ "THREAT" and SimplifiedDeviceAction =~ "alert" 
+| where DeviceEventClassID in ('spyware', 'scan', 'file', 'vulnerability', 'flood', 'packet', 'virus','wildfire', 'wildfire-virus')
+| summarize TotalEvents = count(), ThreatTypes = make_set(DeviceEventClassID), DestinationIpList = make_set(DestinationIP), FirstSeen = min(TimeGenerated) , LastSeen = max(TimeGenerated) by SourceIP, DeviceAction, DeviceProduct, DeviceVendor;
+CurrentHourThreats 
+| where SourceIP !startswith "10." and SourceIP !startswith "172.16." and SourceIP !startswith "172.21." and SourceIP !startswith "172.30." and SourceIP !startswith "172.25." and SourceIP !startswith "192.168." and SourceIP !startswith "172.32." and SourceIP !startswith "172.34."
+| where TotalEvents > CurrThreshold
+| join kind = leftanti (HistoricalThreats 
+| where TotalEvents > HistThreshold) on SourceIP

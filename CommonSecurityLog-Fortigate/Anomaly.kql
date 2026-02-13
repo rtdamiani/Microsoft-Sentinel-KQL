@@ -1,0 +1,28 @@
+CommonSecurityLog
+| where DeviceVendor == "Fortinet"
+| where Activity contains "anomaly"
+| extend 
+    StartTime = extract("start=([^;]+)", 1, AdditionalExtensions),
+    LogVersion = extract("logver=([^;]+)", 1, AdditionalExtensions),
+    VirtualDomain = extract("(vd|ad\\.vd)=([^;]+)", 2, AdditionalExtensions),
+    EventTime = extract("(eventtime|ad\\.eventtime)=([^;]+)", 2, AdditionalExtensions),
+    Timezone = extract("(tz|ad\\.tz)=([^;]+)", 2, AdditionalExtensions),
+    LogID = extract("(logid|ad\\.logid)=([^;]+)", 2, AdditionalExtensions),
+    SubType = extract("(subtype|ad\\.subtype)=([^;]+)", 2, AdditionalExtensions),
+    EventType = extract("(eventtype|ad\\.eventtype)=([^;]+)", 2, AdditionalExtensions),
+    DeviceSeverity = extract("deviceSeverity=([^;]+)", 1, AdditionalExtensions),
+    Severity = extract("(severity|ad\\.severity)=([^;]+)", 2, AdditionalExtensions),
+    SourceCountry = extract("(srccountry|ad\\.srccountry)=([^;]+)", 2, AdditionalExtensions),
+    DestinationCountry = extract("(dstcountry|ad\\.dstcountry)=([^;]+)", 2, AdditionalExtensions),
+    SourceInterfaceRole = extract("(srcintfrole|ad\\.srcintfrole)=([^;]+)", 2, AdditionalExtensions),
+    ExternalID = extract("externalID=([^;]+)", 1, AdditionalExtensions),
+    Count = extract("(count|ad\\.count)=([^;]+)", 2, AdditionalExtensions),
+    AttackType = extract("(attack|ad\\.attack)=([^;]+)", 2, AdditionalExtensions),
+    AttackID = extract("(attackid|ad\\.attackid)=([^;]+)", 2, AdditionalExtensions),
+    PolicyID = extract("(policyid|ad\\.policyid)=([^;]+)", 2, AdditionalExtensions),
+    PolicyType = extract("(policytype|ad\\.policytype)=([^;]+)", 2, AdditionalExtensions),
+    ReferenceURL = extract("(ref|ad\\.ref)=([^;]+)", 2, AdditionalExtensions),
+    CRScore = extract("(crscore|ad\\.crscore)=([^;]+)", 2, AdditionalExtensions),
+    CRAction = extract("(craction|ad\\.craction)=([^;]+)", 2, AdditionalExtensions),
+    CRLevel = extract("(crlevel|ad\\.crlevel)=([^;]+)", 2, AdditionalExtensions)
+| project TimeGenerated, VirtualDomain, SubType, EventType,  DeviceAction, SimplifiedDeviceAction, Activity, PolicyType, AttackType, Message, Severity, SourceIP, SourcePort, SourceCountry, DestinationIP, DestinationPort, DestinationCountry, SourceInterfaceRole, ExternalID, toint(Count), toint(AttackID), toint(PolicyID), toint(CRScore), CRAction, CRLevel

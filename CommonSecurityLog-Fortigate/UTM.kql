@@ -1,0 +1,22 @@
+CommonSecurityLog
+| where DeviceVendor == "Fortinet"
+| where Activity startswith "utm"
+| extend FTNTFGTsubtype = extract("FTNTFGTsubtype=(.*?);FTNTFGTeventtype=", 1, AdditionalExtensions)
+| extend FTNTFGTeventtype = extract("FTNTFGTeventtype=(.*?);FTNTFGTlevel=", 1, AdditionalExtensions)
+| extend FTNTFGTlevel = extract("FTNTFGTlevel=(.*?);FTNTFGTvd=", 1, AdditionalExtensions)
+| extend FTNTFGTvd = extract("FTNTFGTvd=(.*?);FTNTFGTpolicyid=", 1, AdditionalExtensions)
+| extend FTNTFGTpolicyid = extract("FTNTFGTpolicyid=(.*?);FTNTFGTgroup=", 1, AdditionalExtensions)
+| extend FTNTFGTgroup = extract("FTNTFGTgroup=(.*?);FTNTFGTauthserver=", 1, AdditionalExtensions)
+| extend FTNTFGTauthserver = extract("FTNTFGTauthserver=(.*?);FTNTFGTsrcintfrole=", 1, AdditionalExtensions)
+| extend FTNTFGTsrcintfrole = extract("FTNTFGTsrcintfrole=(.*?);FTNTFGTdstintfrole=", 1, AdditionalExtensions)
+| extend FTNTFGTdstintfrole = extract("FTNTFGTdstintfrole=(.*?);FTNTFGTprofile=", 1, AdditionalExtensions)
+| extend FTNTFGTprofile = extract("FTNTFGTprofile=(.*?);FTNTFGTreqtype=", 1, AdditionalExtensions)
+| extend FTNTFGTreqtype = extract("FTNTFGTreqtype=(.*?);FTNTFGTreferralurl=", 1, AdditionalExtensions)
+| extend FTNTFGTreferralurl = extract("FTNTFGTreferralurl=(.*?);FTNTFGTmethod=", 1, AdditionalExtensions)
+| extend FTNTFGTmethod = extract("FTNTFGTmethod=(.*?);FTNTFGTcat=", 1, AdditionalExtensions)
+| extend FTNTFGTcat = extract("FTNTFGTcat=(.*?);FTNTFGTcrscore=", 1, AdditionalExtensions)
+| extend FTNTFGTcrscore = extract("FTNTFGTcrscore=(.*?);FTNTFGTcraction=", 1, AdditionalExtensions)
+| extend FTNTFGTcraction = extract("FTNTFGTcraction=(.*?);FTNTFGTcrlevel=", 1, AdditionalExtensions)
+| extend FTNTFGTcrlevel = extract("FTNTFGTcrlevel=(.*?);FTNTFGTrawdata=", 1, AdditionalExtensions)
+| extend FTNTFGTrawdata = extract("FTNTFGTrawdata=(.*?);Method=", 1, AdditionalExtensions)
+| extend Method = extract("Method=(.*?);Method=", 1, AdditionalExtensions)

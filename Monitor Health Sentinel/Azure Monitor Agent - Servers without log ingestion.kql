@@ -1,0 +1,33 @@
+let SyslogComputers =
+Syslog
+| where TimeGenerated > ago(90d)
+| summarize arg_max(TimeGenerated, *) by Computer
+| extend Table = Type
+| project Computer, Table,
+    ['Last Log']=TimeGenerated,
+    ['Hours since last Log']=datetime_diff("Hour", now(), TimeGenerated)
+| where ['Hours since last Log'] > 1
+| sort by ['Hours since last Log'] desc;
+let SecurityEventComputers =
+SecurityEvent
+| where TimeGenerated > ago(90d)
+| summarize arg_max(TimeGenerated, *) by Computer
+| extend Table = Type
+| project Computer, Table,
+    ['Last Log']=TimeGenerated,
+    ['Hours since last Log']=datetime_diff("Hour", now(), TimeGenerated)
+| where ['Hours since last Log'] > 1
+| sort by ['Hours since last Log'] desc ;
+let ceflogs =
+CommonSecurityLog
+| where TimeGenerated > ago(45d)
+| where CollectorHostName != ""
+| summarize arg_max(TimeGenerated, *) by CollectorHostName
+| extend Table = Type
+| project Computer,Table,
+    ['Last Log']=datetime_utc_to_local(TimeGenerated,"Brazil/East"),
+    ['Hours since last Log']=datetime_diff("Hour", now(), TimeGenerated)
+| where ['Hours since last Log'] > 1
+| sort by ['Hours since last Log'] desc;
+union SyslogComputers, SecurityEventComputers, ceflogs
+| project Computer, Table, ['Hours since last Log'], ['Last Log']

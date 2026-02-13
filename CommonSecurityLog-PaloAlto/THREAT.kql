@@ -1,0 +1,18 @@
+CommonSecurityLog
+| where DeviceProduct == "PAN-OS"
+| where Activity has_any ("THREAT","Suspicious Activity")
+| where DeviceEventClassID in ('spyware', 'scan', 'file', 'vulnerability', 'flood', 'packet', 'virus','wildfire', 'wildfire-virus')
+| extend ThreatName = extract("ThreatName=(.*?);ThreatCategory=", 1, AdditionalExtensions) 
+| extend Rule = extract("Rule=(.*?);VirtualSystem=", 1, AdditionalExtensions) 
+| extend VirtualSystem = extract("VirtualSystem=(.*?);SourceZone=", 1, AdditionalExtensions) 
+| extend SourceZone = extract("SourceZone=(.*?);DestinationZone=", 1, AdditionalExtensions) 
+| extend DestinationZone = extract("DestinationZone=(.*?);LogProfile=", 1, AdditionalExtensions) 
+| extend LogProfile = extract("LogProfile=(.*?);Application=", 1, AdditionalExtensions) 
+| extend Application = extract("Application=(.*?);URL=", 1, AdditionalExtensions) 
+| extend URL = extract("URL=(.*?);URLCategory=", 1, AdditionalExtensions) 
+| extend URLCategory = extract("URLCategory=(.*?);DeviceName=", 1, AdditionalExtensions) 
+| extend DeviceName = extract("DeviceName=(.*?);SessionID=", 1, AdditionalExtensions) 
+| extend SessionID = extract("SessionID=(.*?);ThreatName=", 1, AdditionalExtensions) 
+| extend ThreatName = extract("ThreatName=(.*?);ThreatCategory=", 1, AdditionalExtensions) 
+| extend ThreatCategory = extract("ThreatCategory=(.*?);ThreatCategory=", 1, AdditionalExtensions) 
+| project TimeGenerated, DeviceAction, Activity, DeviceEventClassID, ThreatName, Application, URL, URLCategory, DeviceName, ThreatCategory

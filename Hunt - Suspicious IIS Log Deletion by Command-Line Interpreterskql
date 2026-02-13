@@ -1,0 +1,5 @@
+DeviceFileEvents
+| where ActionType == "FileDeleted"
+| where InitiatingProcessFileName has_any  (@"\cmd.exe", @"\powershell_ise.exe", @"\powershell.exe", @"\pwsh.exe")
+    or InitiatingProcessCommandLine has_any ("cmd.exe", "powershell.exe", "powershell_ise.exe", "pwsh.dll")
+| where FolderPath contains  @"\inetpub\logs\"

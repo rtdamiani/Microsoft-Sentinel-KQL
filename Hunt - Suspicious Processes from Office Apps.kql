@@ -1,0 +1,4 @@
+DeviceProcessEvents
+| where InitiatingProcessParentFileName in ("winword.exe", "excel.exe", "powerpnt.exe")
+| where FileName in ("powershell.exe", "cmd.exe", "wscript.exe")
+| project Timestamp=TimeGenerated, ReportId, DeviceName, AccountUpn=InitiatingProcessAccountUpn, FileName, ProcessCommandLine, DeviceId

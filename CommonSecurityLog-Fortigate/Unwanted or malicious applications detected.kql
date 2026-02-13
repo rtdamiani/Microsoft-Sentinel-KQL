@@ -1,0 +1,28 @@
+CommonSecurityLog
+| where DeviceVendor == "Fortinet"
+| where AdditionalExtensions contains "apprisk=high" or AdditionalExtensions contains "apprisk=critical"
+| where DeviceAction != "deny" and DeviceAction != "close" and DeviceAction != "blocked" and DeviceAction != "dropped" and DeviceAction != "block"
+| extend additional_fields = split(AdditionalExtensions, ";")
+| extend FTNTFGTeventtime = extract("FTNTFGTeventtime=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTtz = extract("FTNTFGTtz=([\\-\\+\\d]+);", 1, AdditionalExtensions)
+| extend FTNTFGTlogid = extract("FTNTFGTlogid=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTsubtype = extract("FTNTFGTsubtype=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTlevel = extract("FTNTFGTlevel=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTvd = extract("FTNTFGTvd=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTsrcintfrole = extract("FTNTFGTsrcintfrole=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTdstintfrole = extract("FTNTFGTdstintfrole=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTsrcinetsvc = extract("FTNTFGTsrcinetsvc=([\\w\\-\\.]+);", 1, AdditionalExtensions)
+| extend FTNTFGTsrccountry = extract("FTNTFGTsrccountry=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTdstcountry = extract("FTNTFGTdstcountry=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTpolicyid = extract("FTNTFGTpolicyid=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTpolicytype = extract("FTNTFGTpolicytype=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTpoluuid = extract("FTNTFGTpoluuid=([\\w\\-]+);", 1, AdditionalExtensions)
+| extend FTNTFGTpolicyname = extract("FTNTFGTpolicyname=([\\w\\-]+);", 1, AdditionalExtensions)
+| extend FTNTFGTappcat = extract("FTNTFGTappcat=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTapprisk = extract("FTNTFGTapprisk=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTcrscore = extract("FTNTFGTcrscore=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTcraction = extract("FTNTFGTcraction=(\\d+);", 1, AdditionalExtensions)
+| extend FTNTFGTcrlevel = extract("FTNTFGTcrlevel=([\\w]+);", 1, AdditionalExtensions)
+| extend FTNTFGTapprisk1 = extract("FTNTFGTapprisk=([\\w]+)$|FTNTFGTapprisk=([\\w]+);", 1, AdditionalExtensions) 
+| where FTNTFGTapprisk == "high" or FTNTFGTapprisk == "critical" or FTNTFGTapprisk1 == "high" or FTNTFGTapprisk1 == "critical"
+| project TimeGenerated,DeviceAction, SourceIP, DestinationIP, Activity, FTNTFGTapprisk, FTNTFGTapprisk1, ApplicationProtocol, FTNTFGTappcat, DestinationUserName

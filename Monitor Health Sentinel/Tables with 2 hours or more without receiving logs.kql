@@ -1,0 +1,8 @@
+let timeThreshold = 2h;
+Usage
+| where TimeGenerated > ago(45d)
+| summarize LastLog = max(TimeGenerated) by DataType
+| extend TimeSinceLastLog = now() - LastLog
+| project DataType, LastLog=datetime_utc_to_local(LastLog,"Brazil/East"), TimeSinceLastLog
+| where TimeSinceLastLog > timeThreshold
+| order by LastLog asc

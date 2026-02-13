@@ -1,0 +1,5 @@
+Usage
+| where StartTime > ago(12h)
+| summarize ['Table Size'] =sum(Quantity) / 1000 by ['Table Name'] =DataType, ['IsBillable'] =IsBillable
+| top 15 by ['Table Size']
+| order by ['Table Size']  desc

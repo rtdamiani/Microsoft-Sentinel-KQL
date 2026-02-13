@@ -1,0 +1,90 @@
+let dt_lookBack = 30d;
+ThreatIntelIndicators
+| where TimeGenerated >= ago(dt_lookBack)
+| summarize arg_max(TimeGenerated, *) by Id
+| where IsActive == "true" and IsDeleted == "false" and ValidUntil > now()
+| where ObservableKey in ("network-traffic:src_ref.value","ipv4-addr:value")
+| where IsActive == "true" and IsDeleted == "false"
+| where Confidence > 80
+| where not(ipv4_is_private(ObservableValue))
+| extend parsedData = parse_json(Data)
+| extend
+        Pattern = tostring(parsedData.pattern), 
+        PatternType = tostring(parsedData.pattern_type),
+        ValidFrom = todatetime(parsedData.valid_from),
+        ValidUntil = todatetime(parsedData.valid_until),
+        IOC_Name = tostring(parsedData.name),
+        IOC_Description = tostring(parsedData.description),
+        Confidence = toint(parsedData.confidence),
+        IndicatorTypes = parsedData.indicator_types,
+        IOC_ID = tostring(parsedData.id),
+        IOC_Created = todatetime(parsedData.created),
+        IOC_Modified = todatetime(parsedData.modified),
+        ExternalReferences = parsedData.external_references,
+        Extensions = parsedData.extensions,
+        Labels = parsedData.labels
+| extend IP_MDTI = ObservableValue
+| project TimeGenerated, ObservableKey, ObservableValue, IP_MDTI,IndicatorTypes, LastUpdateMethod, IOC_Name, IOC_Description, Confidence, Labels, IOC_ID, Id, IsActive, IsDeleted, ValidUntil
+| join kind=innerunique (union isfuzzy=true
+         (DeviceNetworkEvents
+        | summarize arg_max(TimeGenerated, *) by RemoteIP
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where ActionType <> "ConnectionFailed"
+        | where not(ipv4_is_private(RemoteIP))
+        | where isnotempty(RemoteIP)
+        | extend
+            IP_TimeGenerated = TimeGenerated,
+            IP = toupper(RemoteIP)
+        ),
+        (EmailEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where DeliveryAction == "Delivered"
+        | where isnotempty(SenderIPv4)
+        | extend
+            IP_TimeGenerated = TimeGenerated,
+            IP = toupper(SenderIPv4)
+        ),
+        (DeviceNetworkInfo
+        | where TimeGenerated >= ago(dt_lookBack)
+        | extend IPNet = strcat(tostring(parse_json(tostring(parse_json(IPAddresses)[0].IPAddress))))
+        | extend AddressType = strcat(tostring(parse_json(tostring(parse_json(IPAddresses)[0].AddressType))))
+        | where isnotempty(IPNet)
+        | where AddressType !in ("Private","Reserved","LinkLocal")
+        | where not(ipv4_is_private(IPNet))
+        | extend
+            IP_TimeGenerated = TimeGenerated,
+            IP = toupper(IPNet)
+        ),
+        (CommonSecurityLog
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where DeviceAction !in ("blocked","dropped","deny","drop","client-rst","close","server-rst","timeout")
+        | where DeviceEventCategory in ("utm:webfilter","utm:waf","utm:virus","utm:ssh","utm:ips","utm:emailfilter","utm:app-ctrl","utm:anomaly","traffic:local","traffic:forward")
+        | where not(ipv4_is_private(DestinationIP))
+        | where isnotempty(DestinationIP)
+        | extend
+            IP_TimeGenerated = TimeGenerated,
+            IP = toupper(DestinationIP)
+        ),
+         (CommonSecurityLog
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where DeviceAction !in ("blocked","dropped","deny","drop","client-rst","close","server-rst","timeout")
+        | where DeviceEventCategory in ("utm:webfilter","utm:waf","utm:virus","utm:ssh","utm:ips","utm:emailfilter","utm:app-ctrl","utm:anomaly","traffic:local","traffic:forward")
+        | where not(ipv4_is_private(RemoteIP))
+        | where isnotempty(RemoteIP)
+        | extend
+            IP_TimeGenerated = TimeGenerated,
+            IP = toupper(RemoteIP)
+        ),
+        (SigninLogs
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where ResultType == "0"
+        | where isnotempty(IPAddress)
+        | extend
+            IP_TimeGenerated = TimeGenerated,
+            IP = toupper(IPAddress)
+        )
+    )
+    on $left.IP_MDTI == $right.IP
+| where IP_TimeGenerated < ValidUntil
+| summarize IP_TimeGenerated = arg_max(IP_TimeGenerated, *) by Id, IP
+| project TimeGenerated, Type, ActionType, DeviceAction, Activity, InitiatingProcessAccountName, DeviceName, InitiatingProcessFileName, UserPrincipalName, InitiatingProcessFolderPath, InitiatingProcessCommandLine, DestinationIP, SourceIP,IPAddress, RequestURL, DestinationHostName, DestinationUserName, ClientAppUsed, UserAgent, RemoteIP, Confidence, IOC_Name, IOC_Description, IndicatorTypes, Labels

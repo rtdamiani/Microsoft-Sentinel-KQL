@@ -1,0 +1,87 @@
+let dt_lookBack = 4h;
+ThreatIntelIndicators
+| where TimeGenerated >= ago(dt_lookBack)
+| summarize arg_max(TimeGenerated, *) by Id
+| where IsActive == "true" and IsDeleted == "false" and ValidUntil > now()
+| where ObservableKey in ("file:hashes.'SHA-1'","file:hashes.'SHA-256'","file:hashes.MD5")
+| where Confidence > 80
+| extend parsedData = parse_json(Data)
+| extend
+        Pattern = tostring(parsedData.pattern), 
+        PatternType = tostring(parsedData.pattern_type),
+        ValidFrom = todatetime(parsedData.valid_from),
+        ValidUntil = todatetime(parsedData.valid_until),
+        IOC_Name = tostring(parsedData.name),
+        IOC_Description = tostring(parsedData.description),
+        Confidence = toint(parsedData.confidence),
+        IndicatorTypes = parsedData.indicator_types,
+        IOC_ID = tostring(parsedData.id),
+        IOC_Created = todatetime(parsedData.created),
+        IOC_Modified = todatetime(parsedData.modified),
+        ExternalReferences = parsedData.external_references,
+        Extensions = parsedData.extensions,
+        Labels = parsedData.labels
+| extend HASH_MDTI = ObservableValue
+| project TimeGenerated, ObservableKey, ObservableValue, HASH_MDTI,IndicatorTypes, LastUpdateMethod, IOC_Name, IOC_Description, Confidence, Labels, IOC_ID, Id, IsActive, IsDeleted, ValidUntil
+| join kind=innerunique (union isfuzzy=true
+        (SecurityEvent
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(FileHash)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = Computer,
+            HASH_MDE = toupper(FileHash)
+        ),
+        (DeviceEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(SHA256)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = DeviceName,
+            HASH_MDE = toupper(SHA256)
+        ),
+        (DeviceProcessEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(SHA256)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = DeviceName,
+            HASH_MDE = toupper(SHA256)
+        ),
+        (DeviceFileEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(SHA256)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = DeviceName,
+            HASH_MDE = toupper(SHA256)
+        ),
+        (EmailAttachmentInfo
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(SHA256)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = DeviceName,
+            HASH_MDE = toupper(SHA256)
+        ),
+        (DeviceImageLoadEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(SHA256)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = DeviceName,
+            HASH_MDE = toupper(SHA256)
+        ),
+        (WindowsEvent
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(EventData.FileHash)
+        | extend
+            HashEvent_TimeGenerated = TimeGenerated,
+            Event = Computer,
+            HASH_MDE = toupper(EventData.FileHash)
+        )
+    )
+    on $left.HASH_MDTI == $right.HASH_MDE
+| where HashEvent_TimeGenerated < ValidUntil
+| summarize HashEvent_TimeGenerated = arg_max(HashEvent_TimeGenerated, *) by Id, HASH_MDE
+| project-reorder TimeGenerated, Type, AccountType, InitiatingProcessAccountName, DeviceName, SHA256, HASH_MDTI, InitiatingProcessFileName, FileName, InitiatingProcessFolderPath, FolderPath, InitiatingProcessCommandLine, ProcessCommandLine, RecipientEmailAddress, NetworkMessageId,  Confidence, IOC_Name, IOC_Description, IndicatorTypes, Labels

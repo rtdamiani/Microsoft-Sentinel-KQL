@@ -1,0 +1,74 @@
+let dt_lookBack = 2h;
+ThreatIntelIndicators
+| where TimeGenerated >= ago(30d)
+| summarize arg_max(TimeGenerated, *) by Id
+| where IsActive == "true" and IsDeleted == "false" and ValidUntil > now()
+| where ObservableKey in ("url:value")
+//| where Confidence > 80
+| extend parsedData = parse_json(Data)
+| extend
+        Pattern = tostring(parsedData.pattern), 
+        PatternType = tostring(parsedData.pattern_type),
+        ValidFrom = todatetime(parsedData.valid_from),
+        ValidUntil = todatetime(parsedData.valid_until),
+        IOC_Name = tostring(parsedData.name),
+        IOC_Description = tostring(parsedData.description),
+        Confidence = toint(parsedData.confidence),
+        IndicatorTypes = parsedData.indicator_types,
+        IOC_ID = tostring(parsedData.id),
+        IOC_Created = todatetime(parsedData.created),
+        IOC_Modified = todatetime(parsedData.modified),
+        ExternalReferences = parsedData.external_references,
+        Extensions = parsedData.extensions,
+        Labels = parsedData.labels
+| extend URL_MDTI = ObservableValue
+| extend ReportId = tostring(parsedData.reportid)
+| project TimeGenerated, ObservableKey, ObservableValue, URL_MDTI,IndicatorTypes, LastUpdateMethod, IOC_Name, IOC_Description, Confidence, Labels, IOC_ID, Id, IsActive, IsDeleted, ValidUntil,ReportId
+| join kind=innerunique (union isfuzzy=true
+        (DeviceNetworkEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(RemoteUrl)
+        | extend
+            URL_TimeGenerated = TimeGenerated,
+            URL = toupper(RemoteUrl)
+        ),
+        (UrlClickEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(Url)
+        | extend
+            URL_TimeGenerated = TimeGenerated,
+            URL = toupper(Url)
+        ),
+        (DeviceFileEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(FileOriginUrl)
+        | extend
+            URL_TimeGenerated = TimeGenerated,
+            URL = toupper(FileOriginUrl)
+        ),
+		(CommonSecurityLog
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(RequestURL)
+        | extend
+            URL_TimeGenerated = TimeGenerated,
+            URL = toupper(RequestURL)
+        ),
+        (DeviceFileEvents
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(FileOriginReferrerUrl)
+        | extend
+            URL_TimeGenerated = TimeGenerated,
+            URL = toupper(FileOriginReferrerUrl)
+        ),
+        (EmailUrlInfo
+        | where TimeGenerated >= ago(dt_lookBack)
+        | where isnotempty(Url)
+        | extend
+            URL_TimeGenerated = TimeGenerated,
+            URL = toupper(Url)
+        )
+    )
+    on $left.URL_MDTI == $right.URL
+| where URL_TimeGenerated < ValidUntil
+| summarize HashEvent_TimeGenerated = arg_max(URL_TimeGenerated, *) by Id, URL
+| project-reorder TimeGenerated, Type, URL, URL_MDTI, Confidence, IOC_Name, IOC_Description, IndicatorTypes, Labels,ReportId

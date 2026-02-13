@@ -1,0 +1,21 @@
+arg("").resources
+| where type == "microsoft.hybridcompute/machines"
+| extend parsedProperties = parse_json(properties)
+| extend ProvisioningState = tostring(parsedProperties.provisioningState),
+         lastStatusChange = tostring(parsedProperties.lastStatusChange),
+         Status = tostring(parsedProperties.status),
+         DisplayName = tostring(parsedProperties.displayName),
+         OS_Type = tostring(parsedProperties.osType),
+         OS_Version = tostring(parsedProperties.osVersion),
+         MachineFQDN = tostring(parsedProperties.machineFqdn),
+         NetworkInterfaces = parsedProperties.networkProfile.networkInterfaces,
+         TotalMemoryBytes = tolong(parsedProperties.hardwareProfile.totalPhysicalMemoryInBytes),
+         CPU_Sockets = toint(parsedProperties.hardwareProfile.numberOfCpuSockets),
+         Disks = parsedProperties.storageProfile.disks,
+         ProcessorNames = tostring(parsedProperties.detectedProperties.processorNames),
+         SerialNumber = tostring(parsedProperties.detectedProperties.serialNumber),
+         Manufacturer = tostring(parsedProperties.detectedProperties.manufacturer),
+         VMUUID = tostring(parsedProperties.vmUuid),
+         OSInstallDate = todatetime(parsedProperties.osInstallDate)
+         | where Status <> "Connected"
+| project DisplayName, ProvisioningState, Status, lastStatusChange

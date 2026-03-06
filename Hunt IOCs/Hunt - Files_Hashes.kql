@@ -1,0 +1,27 @@
+//Hunt using watchlist for hunting files and hashes in logs Defender for Endpoint, Defender for Office 365, SecurityEvent
+let watchlist = (_GetWatchlist('ListaIOCs') | project IOC);
+DeviceEvents | union DeviceProcessEvents | union DeviceFileEvents | union DeviceNetworkEvents | union SecurityEvent
+| union EmailEvents | union EmailAttachmentInfo | union EmailUrlInfo | union UrlClickEvents
+| where TimeGenerated > ago(7d)
+| where SHA256 has_any (watchlist) or SHA1 has_any (watchlist) or MD5 has_any (watchlist) or InitiatingProcessSHA1 has_any (watchlist) 
+or InitiatingProcessSHA256 has_any (watchlist) or InitiatingProcessMD5 has_any (watchlist) or FolderPath has_any (watchlist) 
+or ProcessName has_any (watchlist) or NewProcessName has_any (watchlist) or ParentProcessName has_any (watchlist) 
+or InitiatingProcessFolderPath has_any (watchlist) or InitiatingProcessParentFileName has_any (watchlist) 
+or InitiatingProcessFileName has_any (watchlist) or FileName has_any (watchlist) 
+| project-reorder Type, TimeGenerated, ActionType, InitiatingProcessAccountName, AccountName, 
+DeviceName, Computer, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, InitiatingProcessFolderPath, FolderPath, 
+LocalIP, RemoteIP, SenderIPv4, Url, RemoteUrl, SHA256, SHA1, InitiatingProcessSHA1, InitiatingProcessSHA256
+
+//Hunt using variable for hunting files and hashes in logs Defender for Endpoint, Defender for Office 365, SecurityEvent
+let IOCs = dynamic(["XXXXXXX" ,"XXXXXXXXX" ,"xxx.dll"]);
+DeviceEvents | union DeviceProcessEvents | union DeviceFileEvents | union DeviceNetworkEvents | union SecurityEvent
+| union EmailEvents | union EmailAttachmentInfo | union EmailUrlInfo | union UrlClickEvents
+| where TimeGenerated > ago(7d)
+| where SHA256 has_any (IOCs) or SHA1 has_any (IOCs) or MD5 has_any (IOCs) or InitiatingProcessSHA1 has_any (IOCs) 
+or InitiatingProcessSHA256 has_any (IOCs) or InitiatingProcessMD5 has_any (IOCs) or FolderPath has_any (IOCs) 
+or ProcessName has_any (IOCs) or NewProcessName has_any (IOCs) or ParentProcessName has_any (IOCs) 
+or InitiatingProcessFolderPath has_any (IOCs) or InitiatingProcessParentFileName has_any (IOCs) 
+or InitiatingProcessFileName has_any (IOCs) or FileName has_any (IOCs) 
+| project-reorder Type, TimeGenerated, ActionType, InitiatingProcessAccountName, AccountName, 
+DeviceName, Computer, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, InitiatingProcessFolderPath, 
+FolderPath, LocalIP, RemoteIP, SenderIPv4,  Url, RemoteUrl, SHA256, SHA1, InitiatingProcessSHA1, InitiatingProcessSHA256

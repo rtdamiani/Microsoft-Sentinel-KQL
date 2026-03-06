@@ -1,0 +1,55 @@
+//Use the Variable for hunting URLs, Domains and IPs in logs Defender for Endpoint, Defender for Office 365, SecurityEvent, CommonSecurityLog
+let IPRegex = '[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}';
+let IOCs = dynamic(["hxxp://malicious.com" ,"url.et" ,"0.0.0.0"]);
+DeviceEvents | union DeviceProcessEvents | union DeviceFileEvents | union DeviceNetworkEvents | union SecurityEvent
+| union CommonSecurityLog | union EmailEvents | union EmailAttachmentInfo | union EmailUrlInfo | union UrlClickEvents
+| union SigninLogs | union CloudAppEvents
+| where TimeGenerated > ago(7d)
+| extend CommandLineIP = extract(IPRegex, 0, InitiatingProcessCommandLine)
+| extend CommandLineIP1 = extract(IPRegex, 0, ProcessCommandLine)
+| extend CommandLineIP2 = extract(IPRegex, 0, CommandLine)
+| extend CommandLineUrl = extract(@"(https?://[^\s'\""<>)]+)", 1, tostring(InitiatingProcessCommandLine))
+| extend CommandLineUrl1 = extract(@"(https?://[^\s'\""<>)]+)", 1, tostring(ProcessCommandLine))
+| extend CommandLineUrl2 = extract(@"(https?://[^\s'\""<>)]+)", 1, tostring(CommandLine))
+| extend query = tostring(parse_json(AdditionalFields).query)
+| extend EncodedCommand = extract(@'\s+([A-Za-z0-9+/]{20}\S+$)', 1, ProcessCommandLine)
+| extend DecodedCommand = base64_decode_tostring(EncodedCommand)
+| where SourceIP has_any (IOCs) or DestinationIP has_any (IOCs) or LocalIP has_any (IOCs) or RemoteIP has_any (IOCs) 
+or SenderIPv4 has_any (IOCs) or RequestURL has_any (IOCs) or Url has_any (IOCs) or IPAddress has_any (IOCs) 
+or RemoteUrl has_any (IOCs) or CommandLineIP has_any (IOCs) or CommandLineIP1 has_any (IOCs) or CommandLineUrl has_any (IOCs) 
+or CommandLineUrl1 has_any (IOCs) or DestinationHostName has_any (IOCs) or query has_any (IOCs) or DecodedCommand has_any (IOCs) 
+or FileOriginUrl has_any (IOCs) or ProcessRemoteSessionIP has_any (IOCs) or InitiatingProcessRemoteSessionIP has_any (IOCs) 
+or ProcessCommandLine has_any (IOCs) or InitiatingProcessCommandLine has_any (IOCs)
+| project-reorder Type, TimeGenerated, ActionType, DeviceAction, InitiatingProcessAccountName, AccountName, DeviceName, Computer, 
+InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, InitiatingProcessFolderPath, FolderPath, SourceIP, DestinationIP, 
+LocalIP, RemoteIP, SenderIPv4, RequestURL, DestinationHostName, Url, RemoteUrl, SHA256, SHA1, InitiatingProcessSHA1, InitiatingProcessSHA256, 
+CommandLineIP, CommandLineIP1, CommandLineIP2, CommandLineUrl, CommandLineUrl1, CommandLineUrl2, query, DecodedCommand, FileOriginUrl, 
+ProcessRemoteSessionIP, InitiatingProcessRemoteSessionIP
+
+//Use the Watchlist for hunting URLs, Domains and IPs in logs Defender for Endpoint, Defender for Office 365, SecurityEvent, CommonSecurityLog
+let IPRegex = '[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}';
+let watchlist = (_GetWatchlist('ListaIOCs') | project IOC);
+DeviceEvents | union DeviceProcessEvents | union DeviceFileEvents | union DeviceNetworkEvents | union SecurityEvent
+| union CommonSecurityLog | union EmailEvents | union EmailAttachmentInfo | union EmailUrlInfo | union UrlClickEvents
+| union SigninLogs | union CloudAppEvents
+| where TimeGenerated > ago(7d)
+| extend CommandLineIP = extract(IPRegex, 0, InitiatingProcessCommandLine)
+| extend CommandLineIP1 = extract(IPRegex, 0, ProcessCommandLine)
+| extend CommandLineIP2 = extract(IPRegex, 0, CommandLine)
+| extend CommandLineUrl = extract(@"(https?://[^\s'\""<>)]+)", 1, tostring(InitiatingProcessCommandLine))
+| extend CommandLineUrl1 = extract(@"(https?://[^\s'\""<>)]+)", 1, tostring(ProcessCommandLine))
+| extend CommandLineUrl2 = extract(@"(https?://[^\s'\""<>)]+)", 1, tostring(CommandLine))
+| extend query = tostring(parse_json(AdditionalFields).query)
+| extend EncodedCommand = extract(@'\s+([A-Za-z0-9+/]{20}\S+$)', 1, ProcessCommandLine)
+| extend DecodedCommand = base64_decode_tostring(EncodedCommand)
+| where SourceIP has_any (watchlist) or DestinationIP has_any (watchlist) or LocalIP has_any (watchlist) or RemoteIP has_any (watchlist) 
+or SenderIPv4 has_any (watchlist) or RequestURL has_any (watchlist) or Url has_any (watchlist) or IPAddress has_any (watchlist) 
+or RemoteUrl has_any (watchlist) or CommandLineIP has_any (watchlist) or CommandLineIP1 has_any (watchlist) or CommandLineUrl has_any (watchlist) 
+or CommandLineUrl1 has_any (watchlist) or DestinationHostName has_any (watchlist) or query has_any (watchlist) or DecodedCommand has_any (watchlist) 
+or FileOriginUrl has_any (watchlist) or ProcessRemoteSessionIP has_any (watchlist) or InitiatingProcessRemoteSessionIP has_any (watchlist) 
+or ProcessCommandLine has_any (watchlist) or InitiatingProcessCommandLine has_any (watchlist)
+| project-reorder Type, TimeGenerated, ActionType, DeviceAction, InitiatingProcessAccountName, AccountName, DeviceName, Computer, 
+InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, InitiatingProcessFolderPath, FolderPath, SourceIP, DestinationIP, 
+LocalIP, RemoteIP, SenderIPv4, RequestURL, DestinationHostName, Url, RemoteUrl, SHA256, SHA1, InitiatingProcessSHA1, InitiatingProcessSHA256, 
+CommandLineIP, CommandLineIP1, CommandLineIP2, CommandLineUrl, CommandLineUrl1, CommandLineUrl2, query, DecodedCommand, FileOriginUrl, 
+ProcessRemoteSessionIP, InitiatingProcessRemoteSessionIP

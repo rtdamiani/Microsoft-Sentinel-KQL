@@ -1,4 +1,4 @@
-//Hunt using watchlist for hunting files and hashes in logs Defender for Endpoint, Defender for Office 365, SecurityEvent
+//Use the Watchlist for hunting files and hashes in logs Defender for Endpoint, Defender for Office 365, SecurityEvent
 let watchlist = (_GetWatchlist('ListaIOCs') | project IOC);
 DeviceEvents | union DeviceProcessEvents | union DeviceFileEvents | union DeviceNetworkEvents | union SecurityEvent
 | union EmailEvents | union EmailAttachmentInfo | union EmailUrlInfo | union UrlClickEvents
@@ -12,7 +12,7 @@ or InitiatingProcessFileName has_any (watchlist) or FileName has_any (watchlist)
 DeviceName, Computer, InitiatingProcessParentFileName, InitiatingProcessFileName, FileName, InitiatingProcessFolderPath, FolderPath, 
 LocalIP, RemoteIP, SenderIPv4, Url, RemoteUrl, SHA256, SHA1, InitiatingProcessSHA1, InitiatingProcessSHA256
 
-//Hunt using variable for hunting files and hashes in logs Defender for Endpoint, Defender for Office 365, SecurityEvent
+//Use the Variable for hunting files and hashes in logs Defender for Endpoint, Defender for Office 365, SecurityEvent
 let IOCs = dynamic(["XXXXXXX" ,"XXXXXXXXX" ,"xxx.dll"]);
 DeviceEvents | union DeviceProcessEvents | union DeviceFileEvents | union DeviceNetworkEvents | union SecurityEvent
 | union EmailEvents | union EmailAttachmentInfo | union EmailUrlInfo | union UrlClickEvents
